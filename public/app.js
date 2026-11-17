@@ -19,38 +19,6 @@ const api = (p, o) => fetch(p, o).then(async r => {
   return j;
 });
 
-function showLogin() {
-  $('auth').hidden = false;
-  $('app').hidden = true;
-  $('logout').hidden = true;
-  $('authHeading').textContent = 'Sign in';
-  $('loginForm').hidden = false;
-  $('authStatus').textContent = '';
-  $('username').focus();
-}
-
-function showApp() {
-  $('auth').hidden = true;
-  $('app').hidden = false;
-  $('logout').hidden = false;
-  d.focus();
-}
-
-async function loadSession() {
-  try {
-    const session = await api('/api/session');
-    if (session.authenticated) showApp();
-    else showLogin();
-  } catch (e) {
-    $('auth').hidden = false;
-    $('app').hidden = true;
-    $('logout').hidden = true;
-    $('authHeading').textContent = 'Service unavailable';
-    $('loginForm').hidden = true;
-    $('authStatus').textContent = e.message;
-  }
-}
-
 function setReady(on) {
   for (const [el, f] of [[$('word'), 'docx'], [$('pdf'), 'pdf']]) {
     el.setAttribute('aria-disabled', on ? 'false' : 'true');
@@ -102,43 +70,6 @@ async function send(f) {
 }
 
 const d = $('drop'), fi = $('file');
-const loginForm = $('loginForm');
-
-loginForm.addEventListener('submit', async e => {
-  e.preventDefault();
-  const submit = loginForm.querySelector('button[type="submit"]');
-  submit.disabled = true;
-  $('authStatus').textContent = '';
-  try {
-    await api('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        username: $('username').value,
-        password: $('password').value
-      })
-    });
-    loginForm.reset();
-    showApp();
-  } catch (error) {
-    $('authStatus').textContent = error.message;
-  } finally {
-    submit.disabled = false;
-  }
-});
-
-$('logout').onclick = async () => {
-  try {
-    await api('/api/logout', { method: 'POST' });
-    jobId = null;
-    setReady(false);
-    $('dlg').close();
-    $('frame').src = '';
-    showLogin();
-  } catch (error) {
-    say(error.message, true);
-  }
-};
 
 d.onclick = () => fi.click();
 d.onkeydown = e => {
@@ -171,5 +102,3 @@ $('close').onclick = () => {
   $('dlg').close();
   $('frame').src = '';
 };
-
-loadSession();

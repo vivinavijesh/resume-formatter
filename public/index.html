@@ -13,23 +13,10 @@
       <img src="logo.jpg" alt="iGen Services &amp; Solutions" width="120" height="74">
     </a>
     <span class="title">Resume Formatter</span>
-    <button id="logout" class="btn" type="button" hidden>Sign out</button>
   </header>
 
   <main id="main" tabindex="-1">
-    <section id="auth" class="auth-panel" aria-labelledby="authHeading">
-      <h1 id="authHeading">Sign in</h1>
-      <form id="loginForm" class="auth-form">
-        <label for="username">Username</label>
-        <input id="username" name="username" autocomplete="username" required>
-        <label for="password">Password</label>
-        <input id="password" name="password" type="password" autocomplete="current-password" required>
-        <button class="btn primary" type="submit">Sign in</button>
-      </form>
-      <p id="authStatus" class="auth-status" role="status" aria-live="polite"></p>
-    </section>
-
-    <section id="app" aria-labelledby="ah" hidden>
+    <section id="app" aria-labelledby="ah">
       <h1 id="ah" class="sr">Convert a resume</h1>
       <div class="row">
         <div class="col drop-col">

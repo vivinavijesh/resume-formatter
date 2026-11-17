@@ -1,23 +1,9 @@
 // iGenss resume portal: upload -> AI parse -> mask company names -> iGen template -> DOCX + PDF
-const express=require('express'),multer=require('multer'),session=require('express-session');
+const express=require('express'),multer=require('multer');
 const crypto=require('crypto'),fs=require('fs'),os=require('os'),path=require('path');
 const {execFile}=require('child_process'),mammoth=require('mammoth'),pdf=require('pdf-parse'),D=require('docx');
 const E=process.env,TTL=10*60*1000,jobs=new Map();
 const app=express();
-if(E.NODE_ENV==='production'){
- app.set('trust proxy',1);
- if(!E.SESSION_SECRET||!E.HR_USER||!E.HR_PASS){
-  throw new Error('Production requires SESSION_SECRET, HR_USER and HR_PASS.');
- }
-}
-app.use(session({
- name:'resume.sid',
- secret:E.SESSION_SECRET||'local-development-only',
- resave:false,
- saveUninitialized:false,
- cookie:{httpOnly:true,sameSite:'lax',secure:E.NODE_ENV==='production',maxAge:8*60*60*1000}
-}));
-app.use(express.json());
 
 const up=multer({storage:multer.memoryStorage(),limits:{fileSize:10e6}});
 const LOGO_PATH=path.join(__dirname,'public/logo.jpg');
@@ -538,41 +524,7 @@ function fallbackBrowser(dir,htmlPath,ok,no){
 const purge=id=>{const j=jobs.get(id);if(j){fs.rmSync(j.dir,{recursive:true,force:true});jobs.delete(id)}};
 setInterval(()=>{for(const[id,j]of jobs)if(Date.now()>j.exp)purge(id)},30e3).unref();
 
-const secureEqual=(candidate,expected)=>{
- if(typeof candidate!=='string'||typeof expected!=='string')return false;
- const a=crypto.createHash('sha256').update(candidate).digest();
- const b=crypto.createHash('sha256').update(expected).digest();
- return crypto.timingSafeEqual(a,b);
-};
-const requireAuth=(q,r,n)=>{
- if(q.session&&q.session.authenticated)return n();
- r.status(401).json({error:'Please sign in to continue.'});
-};
-
-app.get('/api/session',(q,r)=>r.json({authenticated:!!(q.session&&q.session.authenticated)}));
-app.post('/api/login',(q,r)=>{
- const body=q.body||{};
- if(!secureEqual(body.username,E.HR_USER)||!secureEqual(body.password,E.HR_PASS)){
-  return r.status(401).json({error:'Invalid username or password.'});
- }
- q.session.regenerate(error=>{
-  if(error)return r.status(500).json({error:'Unable to start a session.'});
-  q.session.authenticated=true;
-  q.session.save(saveError=>{
-   if(saveError)return r.status(500).json({error:'Unable to save the session.'});
-   r.json({authenticated:true});
-  });
- });
-});
-app.post('/api/logout',requireAuth,(q,r)=>{
- q.session.destroy(error=>{
-  if(error)return r.status(500).json({error:'Unable to end the session.'});
-  r.clearCookie('resume.sid',{httpOnly:true,sameSite:'lax',secure:E.NODE_ENV==='production'});
-  r.json({ok:true});
- });
-});
-
-app.post('/api/convert',requireAuth,up.single('resume'),async(q,r)=>{
+app.post('/api/convert',up.single('resume'),async(q,r)=>{
  let dir;
  try{
   if(!q.file)throw new Error('No file received.');
@@ -598,7 +550,7 @@ app.post('/api/convert',requireAuth,up.single('resume'),async(q,r)=>{
  }
 });
 
-app.get('/api/files/:id/:fmt',requireAuth,(q,r)=>{
+app.get('/api/files/:id/:fmt',(q,r)=>{
  const j=jobs.get(q.params.id);if(!j)return r.status(404).json({error:'File expired or not found.'});
  const f=q.params.fmt==='pdf'?'pdf':q.params.fmt==='html'?'html':'docx';
  const filePath=path.join(j.dir,'cv.'+f);
@@ -617,7 +569,7 @@ app.get('/api/files/:id/:fmt',requireAuth,(q,r)=>{
  r.send(fs.readFileSync(filePath));
 });
 
-app.delete('/api/files/:id',requireAuth,(q,r)=>{purge(q.params.id);r.json({ok:true})});
+app.delete('/api/files/:id',(q,r)=>{purge(q.params.id);r.json({ok:true})});
 
 app.use((q,r,n)=>{
  r.setHeader('X-Content-Type-Options','nosniff');
