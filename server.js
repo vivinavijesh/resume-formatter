@@ -1,4 +1,4 @@
-// iGenss resume portal: upload -> AI parse -> mask company names -> iGen template -> DOCX + PDF
+// iGenss resume portal: upload -> local resume parsing -> mask detected companies -> iGen template
 const express=require('express'),multer=require('multer');
 const crypto=require('crypto'),fs=require('fs'),os=require('os'),path=require('path');
 const {execFile}=require('child_process'),mammoth=require('mammoth'),pdf=require('pdf-parse'),D=require('docx');
@@ -12,38 +12,190 @@ const LOGO_B64=LOGO_BUF?'data:image/jpeg;base64,'+LOGO_BUF.toString('base64'):''
 
 async function extractText(f){
  const n=f.originalname.toLowerCase();
- if(n.endsWith('.pdf'))return(await pdf(f.buffer)).text;
- if(n.endsWith('.docx'))return(await mammoth.extractRawText({buffer:f.buffer})).value;
- if(n.endsWith('.txt'))return f.buffer.toString('utf8');
- throw new Error('Please upload a PDF, DOCX or TXT file.');
+ let text;
+ if(n.endsWith('.pdf'))text=(await pdf(f.buffer)).text;
+ else if(n.endsWith('.docx'))text=(await mammoth.extractRawText({buffer:f.buffer})).value;
+ else if(n.endsWith('.txt'))text=f.buffer.toString('utf8');
+ else throw new Error('Please upload a PDF, DOCX or TXT file.');
+ if(!text.trim())throw new Error('No readable text was found. Scanned PDFs need OCR; upload a searchable PDF, DOCX or TXT file.');
+ return text;
 }
 
-const PROMPT=`Extract this resume into JSON with exactly these keys:
-name, title, tagline, nationality (null if not stated), location,
-profile (array of bullet strings), skills (array of {label,value}),
-projects (array of {company,period,role,location,description,bullets[]}),
-education (array of {institution,degree,period}),
-companies (array of EVERY employer, client, bank or organisation name that appears anywhere in the resume).
-Rules: use only facts present in the resume, never invent; keep reverse-chronological order; tagline should be a short subtitle or specialization; skills should group core competencies (e.g. Test Leadership & QA, Core Banking / Modules, Tools & Methodologies). Return JSON only.`;
+const SECTION_RULES=[
+ {section:'profile',pattern:/^(?:(?:professional|career)\s+)?(?:summary|profile|objective|about me|career highlights)$/i},
+ {section:'skills',pattern:/^(?:(?:core|technical|key)\s+)?(?:skills|competencies|tools|technologies|expertise|areas of expertise)(?:\s*(?:&|and)\s*(?:skills|competencies|tools|technologies|expertise))?$/i},
+ {section:'experience',pattern:/^(?:(?:professional|work|employment|career)\s+)?(?:experience|history|projects?|project history|employment)$/i},
+ {section:'education',pattern:/^(?:education|academic background|qualifications|education and training)$/i},
+ {section:'contact',pattern:/^(?:personal details|contact|contact details|contact information)$/i},
+ {section:'other',pattern:/^(?:certifications?|languages|awards|achievements|interests|publications|training)$/i}
+];
+const ROLE_TERMS=/\b(?:engineer|developer|manager|analyst|consultant|designer|architect|specialist|administrator|technician|director|lead|officer|executive|scientist|coordinator|accountant|nurse|teacher|recruiter|sales|marketing|qa|test|product owner|scrum master|intern)\b/i;
+const YEAR='(?:19|20)\\d{2}',MONTH='(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\\.?';
+const PERIOD_RE=new RegExp(`\\b(?:(?:${MONTH})\\s+)?${YEAR}(?:\\s*(?:[-–—]|to)\\s*(?:(?:${MONTH})\\s+)?${YEAR}|\\s*(?:[-–—]|to)\\s*(?:present|current|now))?\\b`,'i');
+const PERIOD_RANGE_RE=new RegExp(`\\b(?:(?:${MONTH})\\s+)?${YEAR}\\s*(?:[-–—]|to)\\s*(?:(?:${MONTH})\\s+)?${YEAR}|\\b(?:(?:${MONTH})\\s+)?${YEAR}\\s*(?:[-–—]|to)\\s*(?:present|current|now)\\b`,'i');
 
-async function parse(text){
- if(!E.OPENAI_API_KEY){
-  const error=new Error('Resume parsing is not configured. The site owner must set OPENAI_API_KEY.');
-  error.statusCode=503;
-  throw error;
+function stripBullet(line){
+ return String(line).replace(/^\s*(?:[•●▪◦‣*]|\d+[.)]|[-–—])\s+/,'').trim();
+}
+
+function isBullet(line){
+ return /^\s*(?:[•●▪◦‣*]|\d+[.)]|[-–—])\s+/.test(line);
+}
+
+function sectionFor(line){
+ const heading=line.replace(/^\d+(?:\.\d+)*[.)]?\s*/,'').replace(/[:：]\s*$/,'').trim().replace(/\s+/g,' ');
+ return SECTION_RULES.find(rule=>rule.pattern.test(heading));
+}
+
+function isContactLine(line){
+ return /(?:\b\S+@\S+\.\S+\b|https?:\/\/|www\.)/i.test(line)
+  || /^(?:e-?mail|phone|mobile|tel(?:ephone)?|linkedin|website|portfolio|contact)\s*[:|]/i.test(line)
+  || /^\+?[\d\s().-]{7,}$/.test(line);
+}
+
+function isHeaderRecord(line){
+ const text=stripBullet(line);
+ return !isBullet(line)&&text.length>0&&text.length<=100&&!/[.!?]$/.test(text);
+}
+
+function findLabel(lines,pattern){
+ for(const line of lines){
+  const match=stripBullet(line).match(pattern);
+  if(match)return match[1].trim();
  }
- const r=await fetch((E.OPENAI_BASE_URL||'https://api.openai.com/v1')+'/chat/completions',{
-  method:'POST',
-  headers:{'Content-Type':'application/json',Authorization:'Bearer '+E.OPENAI_API_KEY},
-  body:JSON.stringify({
-   model:E.OPENAI_MODEL||'gpt-4o',
-   temperature:0,
-   response_format:{type:'json_object'},
-   messages:[{role:'system',content:PROMPT},{role:'user',content:text.slice(0,60000)}]
-  })
+ return '';
+}
+
+function parseProject(block){
+ const records=block.map(raw=>({raw,text:stripBullet(raw)})).filter(record=>record.text);
+ const used=new Set();
+ const field=(pattern)=>{
+  for(let i=0;i<records.length;i++){
+   const match=records[i].text.match(pattern);
+   if(match){used.add(i);return match[1].trim();}
+  }
+  return '';
+ };
+ let company=field(/^(?:company|employer|client|organisation|organization)\s*[:\-]\s*(.+)$/i);
+ let role=field(/^(?:job\s+)?(?:role|position|title)\s*[:\-]\s*(.+)$/i);
+ const location=field(/^(?:location|based in)\s*[:\-]\s*(.+)$/i);
+ const description=field(/^(?:description|project)\s*[:\-]\s*(.+)$/i);
+ let period='';
+
+ for(let i=0;i<records.length;i++){
+  if(used.has(i))continue;
+  const match=records[i].text.match(PERIOD_RE);
+  if(!match)continue;
+  period=match[0];
+  const remainder=records[i].text.replace(match[0],'').replace(/^[\s()[\],|–—-]+|[\s()[\],|–—-]+$/g,'').trim();
+  if(remainder)records[i].text=remainder;
+  else used.add(i);
+  break;
+ }
+
+ if(!role){
+  const index=records.findIndex((record,i)=>!used.has(i)&&isHeaderRecord(record.raw)&&ROLE_TERMS.test(record.text));
+  if(index>=0){role=records[index].text;used.add(index);}
+ }
+ if(!company){
+  const companyWords=/\b(?:inc\.?|llc|ltd\.?|limited|corp\.?|corporation|company|co\.|plc|gmbh|bank|university|hospital|technologies|solutions|services|group|institute|agency|foundation)\b/i;
+  let index=records.findIndex((record,i)=>!used.has(i)&&isHeaderRecord(record.raw)&&companyWords.test(record.text));
+  if(index<0&&role)index=records.findIndex((record,i)=>!used.has(i)&&isHeaderRecord(record.raw)&&!isContactLine(record.text));
+  if(index>=0){company=records[index].text;used.add(index);}
+ }
+
+ const bullets=records.filter((_,i)=>!used.has(i)).map(record=>record.text);
+ return {company,period,role,location,description,bullets};
+}
+
+function parseEducation(lines){
+ const blocks=[];
+ let current=[];
+ for(const line of lines){
+  if(!line.trim()){
+   if(current.length){blocks.push(current);current=[];}
+  }else current.push(line);
+ }
+ if(current.length)blocks.push(current);
+ return blocks.map(block=>{
+  const records=block.map(stripBullet).filter(Boolean);
+  let institution=findLabel(records,/^(?:institution|school|university)\s*[:\-]\s*(.+)$/i);
+  let degree=findLabel(records,/^(?:degree|qualification)\s*[:\-]\s*(.+)$/i);
+  const periodRecord=records.find(line=>PERIOD_RE.test(line));
+  const period=periodRecord?(periodRecord.match(PERIOD_RE)||[])[0]:'';
+  const used=new Set();
+  records.forEach((line,index)=>{
+   if(/^(?:institution|school|university|degree|qualification)\s*[:\-]/i.test(line)||line===periodRecord)used.add(index);
+  });
+  if(!institution){
+   const index=records.findIndex((line,i)=>!used.has(i));
+   if(index>=0){institution=records[index];used.add(index);}
+  }
+  if(!degree){
+   degree=records.filter((_,i)=>!used.has(i)).join(' | ');
+  }
+  return {institution,degree,period};
+ }).filter(entry=>entry.institution||entry.degree||entry.period);
+}
+
+function parse(text){
+ const sections={header:[],profile:[],skills:[],experience:[],education:[],contact:[],other:[]};
+ let current='header';
+ for(const raw of String(text||'').replace(/\f/g,'\n').replace(/\r\n?/g,'\n').split('\n')){
+  const line=raw.replace(/\u00a0/g,' ').replace(/[ \t]+/g,' ').trim();
+  if(!line){
+   if(sections[current].length&&sections[current][sections[current].length-1]!=='')sections[current].push('');
+   continue;
+  }
+  const heading=sectionFor(line);
+  if(heading){
+   current=heading.section;
+   if(current==='other')sections.other.push(line.replace(/[:：]$/,'')+':');
+   continue;
+  }
+  sections[current].push(line);
+ }
+
+ const headerParts=sections.header.flatMap(line=>line.split(/\s*(?:\||•|·|–|—)\s*|\s+-\s+/).map(part=>part.trim()).filter(Boolean));
+ const explicitName=findLabel(headerParts,/^name\s*[:\-]\s*(.+)$/i);
+ const explicitTitle=findLabel(headerParts,/^(?:title|position)\s*[:\-]\s*(.+)$/i);
+ const headerCandidates=headerParts.map(line=>line.replace(/^(?:name|title|position)\s*[:\-]\s*/i,'').trim())
+  .filter(line=>line&&!isContactLine(line)&&!/^(?:curriculum vitae|resume|résumé|cv|professional cv|professional resume)$/i.test(line)&&!/^(?:nationality|citizenship|location|address|based in|lives)\s*[:\-]/i.test(line));
+ const name=explicitName||headerCandidates.find(line=>{
+  const words=line.split(/\s+/);
+  return words.length>=2&&words.length<=5&&!ROLE_TERMS.test(line)&&!/[,:]$/.test(line);
+ })||'';
+ const title=explicitTitle||headerCandidates.find(line=>line!==name&&ROLE_TERMS.test(line))||'';
+ const detailLines=[...sections.header,...sections.contact];
+ const nationality=findLabel(detailLines,/^(?:nationality|citizenship)\s*[:\-]\s*(.+)$/i);
+ const location=findLabel(detailLines,/^(?:location|address|based in|lives)\s*[:\-]\s*(.+)$/i);
+ const headerProfile=headerCandidates.filter(line=>line!==name&&line!==title);
+ const profile=[...sections.profile,...sections.other].map(stripBullet).filter(Boolean);
+ if(!profile.length)profile.push(...headerProfile);
+
+ const skills=sections.skills.map(stripBullet).filter(Boolean).map(line=>{
+  const match=line.match(/^([^:]{1,60})\s*:\s*(.+)$/);
+  return match?{label:match[1].trim(),value:match[2].trim()}:{label:'Skills',value:line};
  });
- if(!r.ok)throw new Error('AI service error '+r.status);
- return JSON.parse((await r.json()).choices[0].message.content);
+ const experience=[];
+ let currentEntry=[];
+ for(const line of sections.experience){
+  if(!line.trim())continue;
+  if(PERIOD_RANGE_RE.test(line)&&currentEntry.some(entry=>PERIOD_RANGE_RE.test(entry))){
+   const pending=[];
+   while(currentEntry.length&&pending.length<2&&isHeaderRecord(currentEntry[currentEntry.length-1]))pending.unshift(currentEntry.pop());
+   if(currentEntry.length)experience.push(parseProject(currentEntry));
+   currentEntry=pending;
+  }
+  currentEntry.push(line);
+ }
+ if(currentEntry.length)experience.push(parseProject(currentEntry));
+
+ const companies=[...new Set(experience.map(entry=>entry.company).filter(Boolean))];
+ return {
+  name,title,tagline:'',fullTitle:title,nationality,location,profile,skills,
+  projects:experience,education:parseEducation(sections.education),companies
+ };
 }
 
 function mask(d){
@@ -451,4 +603,4 @@ app.use((q,r,n)=>{
  n();
 });
 app.use(express.static(path.join(__dirname,'public')));
-app.listen(E.PORT||3000,()=>console.log('Portal on http://localhost:'+(E.PORT||3000)+(E.OPENAI_API_KEY?'':'  (resume parsing unavailable: OPENAI_API_KEY is not set)')));
+app.listen(E.PORT||3000,()=>console.log('Portal on http://localhost:'+(E.PORT||3000)));
