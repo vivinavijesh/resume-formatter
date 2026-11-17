@@ -366,22 +366,22 @@ function buildHtml(d){
 <style>
   @page {
     size: letter;
-    margin: 20mm 25mm 25mm 25mm;
+    margin: 1in 1.248in;
     @bottom-center {
       content: "www.igenss.com" "\\A" "Page " counter(page) " of " counter(pages);
       white-space: pre;
-      font-family: Calibri, 'Segoe UI', Arial, sans-serif;
-      font-size: 8.5pt;
-      color: #555555;
+      font-family: Calibri, Carlito, 'Segoe UI', Arial, sans-serif;
+      font-size: 9pt;
+      color: #404040;
       text-align: center;
-      line-height: 1.5;
+      line-height: 1.2;
     }
   }
   * { box-sizing: border-box; }
   body {
-    font-family: Calibri, 'Segoe UI', Arial, sans-serif;
+    font-family: Calibri, Carlito, 'Segoe UI', Arial, sans-serif;
     font-size: 11pt;
-    line-height: 1.35;
+    line-height: 1.15;
     color: #404040;
     margin: 0;
     padding: 0;
@@ -389,47 +389,44 @@ function buildHtml(d){
   }
   .page-break { page-break-after: always; break-after: page; }
   .cover {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
     text-align: center;
-    min-height: 800px;
-    padding-top: 40px;
+    min-height: 9in;
+    padding-top: 40pt;
   }
-  .cover-logo { width: 250px; height: auto; margin-bottom: 50px; }
-  .cover-cv { font-size: 18pt; font-weight: bold; color: #000; margin-bottom: 35px; }
-  .cover-name { font-size: 18pt; font-weight: bold; color: #000; margin-bottom: 35px; text-transform: uppercase; }
-  .cover-title { font-size: 18pt; font-weight: bold; color: #000; margin-bottom: 15px; }
-  .cover-tagline { font-size: 18pt; font-weight: bold; color: #000; margin-bottom: 15px; }
-  .body-page { padding-top: 10px; }
-  .body-header { text-align: center; margin-bottom: 25px; }
-  .body-header-cv { font-size: 11pt; font-weight: bold; color: #000; margin-bottom: 10px; }
-  .body-header-name { font-size: 13pt; font-weight: normal; color: #000; margin-bottom: 10px; }
+  .cover-logo { display: block; width: 301px; height: 185px; object-fit: fill; margin: 0 auto 36pt; }
+  .cover-cv { font-size: 18pt; font-weight: bold; color: #000; margin-bottom: 36pt; }
+  .cover-name { font-size: 18pt; font-weight: bold; color: #000; margin-bottom: 36pt; text-transform: uppercase; }
+  .cover-title { font-size: 18pt; font-weight: bold; color: #000; margin-bottom: 12pt; }
+  .cover-tagline { font-size: 18pt; font-weight: bold; color: #000; margin-bottom: 12pt; }
+  .body-page { padding-top: 0; }
+  .body-header { text-align: center; padding-bottom: 15pt; }
+  .body-header-cv { font-size: 11pt; font-weight: bold; color: #000; margin-bottom: 10pt; }
+  .body-header-name { font-size: 12pt; font-weight: normal; color: #000; margin-bottom: 10pt; }
   .body-header-title { font-size: 11pt; font-weight: bold; color: #000; }
-  .section-title { font-size: 11pt; font-weight: bold; color: #000; margin-top: 22px; margin-bottom: 10px; text-transform: uppercase; }
-  .details-table { border-collapse: collapse; margin-bottom: 10px; }
-  .details-table td { padding: 3px 0; font-size: 11pt; color: #000; vertical-align: top; }
-  .details-table td.dt-label { width: 140px; }
-  .bullets { margin: 0 0 10px 0; padding-left: 20px; text-align: justify; }
-  .bullets li { margin-bottom: 5px; }
-  .skills-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-  .skills-table td { padding: 3px 0; font-size: 11pt; vertical-align: top; }
-  .skills-table td.skill-label { width: 190px; color: #000; white-space: nowrap; padding-right: 15px; }
+  .section-title { font-size: 11pt; font-weight: bold; color: #000; margin-top: 12pt; margin-bottom: 7pt; text-transform: uppercase; break-after: avoid; page-break-after: avoid; }
+  .details-table { border-collapse: collapse; margin-bottom: 6pt; }
+  .details-table td { padding: 0 0 3pt; font-size: 11pt; color: #000; vertical-align: top; }
+  .details-table td.dt-label { width: 85pt; }
+  .bullets { margin: 0; padding-left: 20pt; text-align: justify; }
+  .bullets li { margin-bottom: 4pt; }
+  .project-block .bullets li { margin-bottom: 3pt; }
+  .skills-table { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+  .skills-table td { padding: 0 0 4pt; font-size: 11pt; vertical-align: top; }
+  .skills-table td.skill-label { width: 130pt; color: #000; white-space: nowrap; padding-right: 15px; }
   .skills-table td.skill-val { color: #000; }
-  .project-block { margin-bottom: 14px; page-break-inside: avoid; }
-  .project-header { display: flex; justify-content: space-between; font-weight: bold; color: #000; margin-top: 14px; margin-bottom: 3px; }
-  .project-role { font-weight: bold; color: #000; margin-bottom: 3px; }
-  .project-meta { color: #000; margin-bottom: 3px; }
-  .edu-block { margin-bottom: 10px; page-break-inside: avoid; }
-  .edu-header { display: flex; justify-content: space-between; color: #000; margin-bottom: 2px; }
+  .project-block { display: flow-root; page-break-inside: avoid; }
+  .project-header { display: flex; justify-content: space-between; font-weight: bold; color: #000; margin-top: 10pt; margin-bottom: 2pt; }
+  .project-role { font-weight: bold; color: #000; margin-bottom: 3pt; }
+  .project-meta { color: #000; margin-bottom: 3pt; }
+  .edu-block { margin-bottom: 10pt; page-break-inside: avoid; }
+  .edu-header { display: flex; justify-content: space-between; color: #000; margin-bottom: 2pt; }
   .edu-degree { color: #000; }
   .page-footer {
     text-align: center;
-    font-size: 8.5pt;
-    color: #555555;
-    margin-top: 30px;
-    padding-top: 6px;
+    font-size: 9pt;
+    color: #404040;
+    margin-top: 15pt;
+    padding-top: 0;
     border-top: 1px solid #ddd;
   }
   @media print {
