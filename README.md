@@ -6,7 +6,7 @@ Upload a resume (PDF/DOCX/TXT) -> AI extracts the data -> company names are mask
 1. Install Node 18+ and LibreOffice (needed for the PDF; set SOFFICE=/path/to/soffice if it is not on PATH).
 2. Copy `.env.example` to `.env`.
 3. Run `npm install` and `node --env-file=.env server.js`, then open http://localhost:3000.
-Without `OPENAI_API_KEY`, the app runs in demo mode with sample data.
+Set `OPENAI_API_KEY` before uploading resumes. If it is missing, conversion returns a configuration error; the app never substitutes sample resume data.
 
 ## Notes
 - Uploads stay in memory only. Generated files live in the OS temp folder and are deleted after 10 minutes (TTL in server.js).
@@ -16,5 +16,5 @@ Without `OPENAI_API_KEY`, the app runs in demo mode with sample data.
 
 ## Deployment
 - The Netlify site proxies `/api/*` to the Render web service defined in `render.yaml`.
-- Deploy the project as a Render Blueprint. Set `OPENAI_API_KEY` in Render for AI parsing; without it, the app uses demo data.
+- Deploy the project as a Render Blueprint. Set `OPENAI_API_KEY` in Render for AI parsing; without it, uploads return a configuration error.
 - LibreOffice is installed in the backend Docker image for PDF generation.

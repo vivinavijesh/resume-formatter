@@ -27,7 +27,11 @@ companies (array of EVERY employer, client, bank or organisation name that appea
 Rules: use only facts present in the resume, never invent; keep reverse-chronological order; tagline should be a short subtitle or specialization; skills should group core competencies (e.g. Test Leadership & QA, Core Banking / Modules, Tools & Methodologies). Return JSON only.`;
 
 async function parse(text){
- if(!E.OPENAI_API_KEY)return MOCK;
+ if(!E.OPENAI_API_KEY){
+  const error=new Error('Resume parsing is not configured. The site owner must set OPENAI_API_KEY.');
+  error.statusCode=503;
+  throw error;
+ }
  const r=await fetch((E.OPENAI_BASE_URL||'https://api.openai.com/v1')+'/chat/completions',{
   method:'POST',
   headers:{'Content-Type':'application/json',Authorization:'Bearer '+E.OPENAI_API_KEY},
@@ -41,133 +45,6 @@ async function parse(text){
  if(!r.ok)throw new Error('AI service error '+r.status);
  return JSON.parse((await r.json()).choices[0].message.content);
 }
-
-const MOCK={
- name:"Galya Ivanova",
- title:"T24 Test Lead",
- tagline:"Senior Temenos QA & Test Lead",
- fullTitle:"T24 Test Lead | Temenos QA Lead",
- nationality:"Bulgarian",
- location:"Sofia, Bulgaria. Available for remote work / travel as required.",
- profile:[
-  "Accomplished T24 Test Lead with 15+ years of experience in international banking and wealth management implementations, specializing in end-to-end test leadership, test strategy, and quality assurance across Temenos T24 / Transact releases (R7–R23).",
-  "Proven track record of leading SIT and UAT testing cycles, managing testing teams, defining risk-based test strategies, and ensuring on-time, within-budget delivery for major global banking institutions.",
-  "Extensive hands-on expertise across core banking and wealth management modules: Customer, AA Accounts, Lending / AA Loans, Deposits, TPH Payments, Securities, Portfolio Management, FX, Derivatives, FCM, Infinity, and Triple'A Plus.",
-  "Strong leadership in UAT training and user enablement, having designed reusable test libraries (~1,500 complex test cases) and trained over 30 banking staff across multiple international rollouts.",
-  "Experienced in regulatory compliance projects (MiFID II), optimizing test coverage and reducing regression testing time by up to 30% through Risk-Based Testing methodologies.",
-  "Skilled in both Agile and Waterfall delivery methodologies, defect triage, Temenos PACS/portal escalation, and test management tools including JIRA, Xray, HP ALM, Validata ATS, Remedy, and Confluence.",
-  "Key Achievement – UAT & Go-Live Leadership: Successfully led end-to-end UAT testing and Go-Live readiness for Temenos T24 Transact R23 at Britannia Securities, delivering core banking modules on schedule.",
-  "Key Achievement – Risk-Based Testing Efficiency: Implemented Risk-Based Testing techniques, achieving a 30% reduction in regression testing execution time.",
-  "Key Achievement – Scope Optimization & E2E Test Strategy (MiFID II): Rationalized ~300 existing test scenarios into 40 high-impact end-to-end scenarios aligned with MiFID II regulatory requirements.",
-  "Key Achievement – Agile Process Acceleration: Streamlined QA workflows using Agile tools, reducing time-to-deployment by 25% across international banking projects."
- ],
- skills:[
-  {label:"Test Leadership & QA",value:"Test Strategy, UAT & SIT Management, Risk-Based Testing, Defect Triage, Go-Live Support, Staff Training"},
-  {label:"Temenos T24 / Transact",value:"Releases R7–R23, Customer, AA Accounts, AA Loans, Deposits, TPH Payments, Securities, Portfolio Management, FX, Derivatives, FCM, Infinity, Triple'A Plus"},
-  {label:"Tools & Methodologies",value:"JIRA, Xray, HP ALM, Validata ATS, Remedy, Temenos Portal, Confluence, Agile, Waterfall"}
- ],
- projects:[
-  {
-   company:"Britannia Securities",
-   period:"October 2024 – February 2025",
-   role:"Transact Test Lead",
-   location:"Bahamas (Short-term contract)",
-   description:"Temenos T24 Transact R23 Core Banking Implementation",
-   bullets:[
-    "Led end-to-end UAT testing cycles, UAT training, and preparation-for-Go-Live support for T24 Transact R23 covering Customer, AA Accounts, TPH Payments, Securities, Infinity, and FCM modules.",
-    "Authored the UAT Test Strategy and tailored test cases, ensuring full alignment with client-specific business requirements and a smooth transition to live operations.",
-    "Directed defect triage, root-cause coordination, and escalation directly with Temenos.",
-    "Provided senior consulting expertise on Temenos T24 modules, collaborating closely with client stakeholders to resolve critical issues prior to deployment.",
-    "Managed test execution and defect tracking in Excel and the Temenos Portal within a Waterfall delivery framework."
-   ]
-  },
-  {
-   company:"Intrum Hellas",
-   period:"May 2023 – September 2023",
-   role:"Transact Global Product QA Specialist (QA Lead Responsibilities)",
-   location:"Remote (Contract)",
-   description:"Temenos Transact AA Loans & TDH Implementation",
-   bullets:[
-    "Defined the QA test strategy and led functional and regression test case design for Transact AA Loans and TDH products.",
-    "Conducted functional gap analysis, oversaw QA validation of software fixes, and coordinated defect resolution across teams.",
-    "Facilitated workshops with stakeholders to clarify functional specifications and resolve product backlog items.",
-    "Managed end-to-end test execution and defect lifecycle in Xray and Jira."
-   ]
-  },
-  {
-   company:"Deloitte",
-   period:"January 2022 – March 2022",
-   role:"T24 Testing Consultant / Test Lead",
-   location:"Remote (Short-term contract)",
-   description:"Temenos Transact R21 Integration & Regulatory Reporting",
-   bullets:[
-    "Led testing validation for the Transact R21 implementation, ensuring seamless integration of TPH Payments, Teller, Cards, MM, and FX modules into the IBM reporting framework.",
-    "Provided expert functional guidance on the correct population of transactions within IBM reporting to ensure strict compliance with financial regulations.",
-    "Executed test scenarios and managed defect tracking and status reporting within a Waterfall setup."
-   ]
-  },
-  {
-   company:"BIL Luxembourg",
-   period:"July 2021 – December 2021",
-   role:"Senior T24 Test Analyst / Test Lead",
-   location:"Luxembourg (Contract)",
-   description:"MiFID II & Wealth Management Testing (Transact & Triple'A Plus)",
-   bullets:[
-    "Led testing activities across Temenos Transact and Triple'A Plus applications and participated in client workshops to validate wealth management business functionalities.",
-    "Executed end-to-end functional and regression testing across Securities, Security Master, Portfolio Management, Forex, and Derivatives in a MiFID II project.",
-    "Managed test design and execution in HP ALM, with defect triage, tracking, and reporting in Jira."
-   ]
-  },
-  {
-   company:"Nordea Bank",
-   period:"October 2017 – December 2017",
-   role:"Senior Transact Tester",
-   location:"Luxembourg (Contract)",
-   description:"Temenos T24 Transact R17 & Triple'A Plus MiFID II Project",
-   bullets:[
-    "Executed SIT and end-to-end testing for T24 Transact R17 and Triple'A Plus, coordinating testing efforts across functional and technical teams.",
-    "Tested a wide range of financial instruments including Securities (Bonds, Equities), Forex (Spot, Forward, Swap), and Derivatives (Options, Futures).",
-    "Led defect triage and managed test design, execution, and reporting in HP ALM and Jira."
-   ]
-  },
-  {
-   company:"Validata Group",
-   period:"April 2013 – October 2017",
-   role:"Senior Temenos Test Lead / T24 QA Lead",
-   location:"Trinidad and Tobago, Grenada, Canada, Costa Rica",
-   description:"Multi-Country Core Banking Implementations (Temenos Releases R7 – R17)",
-   bullets:[
-    "Served as Senior Temenos Test Lead, managing end-to-end SIT and UAT testing activities, defect management, and executive reporting across releases R7–R17 (Customer, AA Account, Lending, Payments, Deposits).",
-    "Defined the overarching Test Strategy and delivered hands-on training to over 30 bank employees to build internal client testing capabilities.",
-    "Adapted and executed a reusable test case library of ~1,500 complex test cases to client-specific environments, ensuring accurate end-to-end validation, data consistency, and business process alignment.",
-    "Managed requirements traceability, test design, execution, and defect tracking in Validata ATS (all-in-one test management tool)."
-   ]
-  },
-  {
-   company:"National Bank of Greece (NBG) / United Bulgarian Bank (UBB)",
-   period:"March 2008 – April 2013",
-   role:"T24 Functional Support & UAT Lead Coordinator",
-   location:"Sofia, Bulgaria",
-   description:"NBG Competence Center – Subsidiary Banks Support & UAT",
-   bullets:[
-    "Provided second-level T24 core banking functional support for NBG subsidiary banks at the NBG Competence Center, leading troubleshooting and issue resolution.",
-    "Coordinated UAT testing activities, validated banking workflows, and collaborated with IT teams on Temenos system changes and releases.",
-    "Started career as a Senior Banking Officer at United Bulgarian Bank (UBB), bridging front-office banking operations with UAT/T24 system validation.",
-    "Managed defect tracking and escalations using Remedy, Temenos Portal, and Jira."
-   ]
-  }
- ],
- education:[
-  {
-   institution:"D. A. Tsenov Academy of Economics, Svishtov, Bulgaria",
-   degree:"Master's Degree in Financial Management",
-   period:""
-  }
- ],
- companies:[
-  "Britannia Securities","Intrum Hellas","Deloitte","Credit Suisse","Credit Suisse Italy","BIL Luxembourg","Nordea Bank","Validata Group","National Bank of Greece","NBG","United Bulgarian Bank","UBB"
- ]
-};
 
 function mask(d){
  const names=[...new Set((d.companies||[]).filter(s=>s&&s.length>2))].sort((a,b)=>b.length-a.length)
@@ -543,7 +420,7 @@ app.post('/api/convert',up.single('resume'),async(q,r)=>{
   r.json({id,expiresInMinutes:TTL/60000});
  }catch(e){
   if(dir)fs.rmSync(dir,{recursive:true,force:true});
-  r.status(400).json({error:e.message});
+  r.status(e.statusCode||400).json({error:e.message});
  }
 });
 
@@ -574,4 +451,4 @@ app.use((q,r,n)=>{
  n();
 });
 app.use(express.static(path.join(__dirname,'public')));
-app.listen(E.PORT||3000,()=>console.log('Portal on http://localhost:'+(E.PORT||3000)+(E.OPENAI_API_KEY?'':'  (demo mode: no OPENAI_API_KEY)')));
+app.listen(E.PORT||3000,()=>console.log('Portal on http://localhost:'+(E.PORT||3000)+(E.OPENAI_API_KEY?'':'  (resume parsing unavailable: OPENAI_API_KEY is not set)')));
