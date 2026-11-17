@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Resume Formatter | iGen Services &amp; Solutions</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to main content</a>
+  <header class="bar">
+    <a href="https://www.igenss.com" class="brand">
+      <img src="logo.jpg" alt="iGen Services &amp; Solutions" width="120" height="74">
+    </a>
+    <span class="title">Resume Formatter</span>
+    <button id="logout" class="btn" type="button" hidden>Sign out</button>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <section id="auth" class="auth-panel" aria-labelledby="authHeading">
+      <h1 id="authHeading">Sign in</h1>
+      <form id="loginForm" class="auth-form">
+        <label for="username">Username</label>
+        <input id="username" name="username" autocomplete="username" required>
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+        <button class="btn primary" type="submit">Sign in</button>
+      </form>
+      <p id="authStatus" class="auth-status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section id="app" aria-labelledby="ah" hidden>
+      <h1 id="ah" class="sr">Convert a resume</h1>
+      <div class="row">
+        <div class="col drop-col">
+          <div id="drop" class="drop" role="button" tabindex="0" aria-describedby="hint">
+            <span class="big">Drop resume</span>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M7 18a4 4 0 0 1-.5-7.9A5.5 5.5 0 0 1 17 8.5a4.5 4.5 0 0 1 0 9.5"/>
+              <path d="M12 21V12m-3 3 3-3 3 3"/>
+            </svg>
+          </div>
+          <p id="hint" class="hint">PDF, DOCX or TXT, up to 10 MB. Press Enter to browse.</p>
+          <input id="file" type="file" accept=".pdf,.docx,.txt" hidden>
+        </div>
+
+        <div class="col preview-col">
+          <button id="preview" class="btn wide preview-btn" disabled>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <span>View sample before downloading</span>
+          </button>
+        </div>
+
+        <div class="col dl-col">
+          <div class="dl">
+            <a id="word" class="tile blue" role="link" aria-disabled="true" tabindex="-1">
+              <span class="ic">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M7 18a4 4 0 0 1-.5-7.9A5.5 5.5 0 0 1 17 8.5a4.5 4.5 0 0 1 0 9.5"/>
+                  <path d="M12 11v9m-3-3 3 3 3-3"/>
+                </svg>
+              </span>
+              <span>Word</span>
+            </a>
+            <a id="pdf" class="tile red" role="link" aria-disabled="true" tabindex="-1">
+              <span class="ic">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M7 18a4 4 0 0 1-.5-7.9A5.5 5.5 0 0 1 17 8.5a4.5 4.5 0 0 1 0 9.5"/>
+                  <path d="M12 11v9m-3-3 3 3 3-3"/>
+                </svg>
+              </span>
+              <span>PDF</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <p id="status" role="status" aria-live="polite" class="status"></p>
+      <p class="note">Company names are masked automatically. Files are deleted 10 minutes after processing.</p>
+    </section>
+
+    <!-- PREVIEW DIALOG -->
+    <dialog id="dlg" aria-label="Resume Preview">
+      <div class="dlg-bar">
+        <span class="dlg-title">Resume Preview</span>
+        <div class="dlg-actions">
+          <a id="dlgPdf" class="btn primary" download>Download PDF</a>
+          <a id="dlgWord" class="btn" download>Download Word</a>
+          <a id="dlgOpen" class="btn" target="_blank" rel="noopener">Open in Tab</a>
+          <button id="close" class="btn">Close</button>
+        </div>
+      </div>
+      <iframe id="frame" title="Formatted resume preview"></iframe>
+    </dialog>
+  </main>
+
+  <footer class="bar foot">
+    <span>&copy; iGen Services &amp; Solutions</span>
+    <a href="https://www.igenss.com" target="_blank" rel="noopener">www.igenss.com</a>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
