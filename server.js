@@ -222,7 +222,7 @@ function mkFooter(){
   kids.push(new D.Paragraph({
    alignment:D.AlignmentType.CENTER,
    spacing:{before:800,after:720},
-   children:[new D.ImageRun({type:'jpg',data:LOGO_BUF,transformation:{width:301,height:185},altText:{title:'iGen',description:'iGen logo',name:'logo'}})]
+   children:[new D.ImageRun({type:'jpg',data:LOGO_BUF,transformation:{width:301,height:302},altText:{title:'iGen',description:'iGen logo',name:'logo'}})]
   }));
  }
 
@@ -393,7 +393,7 @@ function buildHtml(d){
     min-height: 9in;
     padding-top: 40pt;
   }
-  .cover-logo { display: block; width: 301px; height: 185px; object-fit: fill; margin: 0 auto 36pt; }
+  .cover-logo { display: block; width: 301px; height: auto; margin: 0 auto 36pt; }
   .cover-cv { font-size: 18pt; font-weight: bold; color: #000; margin-bottom: 36pt; }
   .cover-name { font-size: 18pt; font-weight: bold; color: #000; margin-bottom: 36pt; text-transform: uppercase; }
   .cover-title { font-size: 18pt; font-weight: bold; color: #000; margin-bottom: 12pt; }
